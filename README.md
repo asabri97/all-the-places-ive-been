@@ -1,8 +1,12 @@
 # All the places I've been
 
-A small globe of places you have lived, been, and still want to see, plus the flights between them. It uses [Cobe](https://cobe.vercel.app/).
+A small globe of places you have lived, been, and still want to see, plus the flights between them.
 
-`data/` is the globe you edit. `example/` is a filled-in copy: 3 lived, 58 been, 23 wish, and 81 flights.
+<div align="center">
+  <img src="example/places.gif" alt="The example globe" width="640">
+</div>
+
+`data/profiles/` holds sample people, Ada and Leo. Your own globe stays in `private/profiles/`, which git ignores.
 
 ## Run it
 
@@ -11,17 +15,19 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints. That globe is the short sample in `data/`.
+Open the URL Vite prints. With nothing in `private/`, you get Ada and Leo. Under the globe, Places and Flights switch the view, and the names switch the person. Both draws every person at once. A purple dot means both lists include that place. A polaroid means a trip taken together. The second person's routes are drawn in orange.
 
-To open the filled-in example instead:
+A link opens one person directly: `?person=ada`, or `?person=both`.
 
-```bash
-npm run example
-```
+Click a dot and the globe turns to it. The card says whether that place was lived, been, or wished, and how many flights landed closer to it than to any other dot.
 
-## Add your places
+The newest flight pulses on its arrival airport.
 
-Edit `data/places.csv`. One row per place. `status` is `lived`, `been`, or `wish`.
+## Add yourself
+
+Create `private/profiles/<name>/`. The folder name is the link (`?person=ada`) and the label under the globe.
+
+`places.csv`, one row per place. `status` is `lived`, `been`, or `wish`.
 
 ```csv
 name,status,latitude,longitude,label
@@ -34,9 +40,11 @@ Reykjavík,wish,64.1466,-21.9426,Iceland
 
 Each dot is a point at those coordinates, not a filled-in country.
 
-## Add your flights
+Add another person by adding another folder. While any private profile exists, the sample people are hidden, so a second person is a second folder next to yours.
 
-Export a CSV from [Flighty](https://flighty.com/) and save it as `data/flights.csv`. Any other CSV works if it has `From` and `To` airport codes. `Canceled` is optional. A canceled row is skipped. Everything else in the file, including seat, PNR, and notes, is ignored.
+## Add flights
+
+Export a CSV from [Flighty](https://flighty.com/) and save it as `flights.csv` in that person's folder. Any other CSV works if it has `From` and `To` airport codes. `Date` is used to find the latest trip. `Canceled` is optional. A canceled row is skipped. Everything else in the file, including seat, PNR, and notes, is ignored.
 
 ```csv
 Date,From,To,Canceled
@@ -46,7 +54,7 @@ Date,From,To,Canceled
 
 Repeated trips between the same airports become one line. The caption still counts every flight.
 
-Airport coordinates come from [OurAirports](https://ourairports.com/) (David Megginson, public domain). You only need `data/airports.csv` when a code is missing or the city name is wrong. A row there replaces the built-in one:
+Airport coordinates come from [OurAirports](https://ourairports.com/) (David Megginson, public domain). Add `airports.csv` in the same folder only when a code is missing or the city name is wrong. A row there replaces the built-in one:
 
 ```csv
 code,city,latitude,longitude
@@ -55,20 +63,19 @@ BKF,Aurora,39.7018,-104.752
 
 If two airports in your export share a city name, the label adds the code.
 
-## The example
+## Mark a trip you took together
 
-Lived: Germany, Pakistan, United States.
+Purple means each person has that place on their own list. A polaroid means you were there together.
 
-Been: Albania, Austria, Azerbaijan, Azores, Belgium, Bhutan, Brazil, Cambodia, Chile, China, Colombia, Costa Rica, Croatia, Cyprus, Czechia, Denmark, Egypt, England, France, Greece, Hungary, Ireland, Italy, Japan, Jordan, Kosovo, Latvia, Liechtenstein, Luxembourg, Madeira, Malaysia, Malta, Mauritius, Mexico, Morocco, Netherlands, Nicaragua, North Macedonia, Norway, Poland, Portugal, Romania, Saudi Arabia, Scotland, Seychelles, Singapore, South Korea, Spain, Sri Lanka, Sweden, Switzerland, Taiwan, Thailand, Turkey, United Arab Emirates, United Kingdom, Vatican, Wales.
+Add one row to `private/shared.csv`. The place name matches the name in a places file. The people are folder names.
 
-Wish: New Zealand, Rwanda, Namibia, Mongolia, Kazakhstan, Uzbekistan, India, Papua New Guinea, Indonesia, Iceland, Kenya, Ethiopia, Lesotho, Madagascar, Tanzania, Armenia, Bahamas, Belize, Trinidad and Tobago, Guatemala, Cuba, Fiji, Antarctica.
-
-The flight file in `example/flights.csv` is the same trips as a Flighty export, with only the date and the two airports kept. `example/airports.csv` gives those airports the city names used on the globe. `BKF` is Buckley in Aurora, Colorado, not the seaplane base that reuses that code.
-
-To make that example the files `npm run dev` reads, copy them over `data/`:
-
-```bash
-cp example/places.csv data/places.csv
-cp example/flights.csv data/flights.csv
-cp example/airports.csv data/airports.csv
+```csv
+place,people
+Germany,abrish hammad
 ```
+
+With three or four people, name only the ones who went: `Japan,abrish hammad`. On Both, that polaroid shows when at least two of them are in the view.
+
+A picture of a trip you took together can be several shots. Name them `japan1.jpg`, `japan2.jpg`, and so on, and put them in `assets/`. That folder is gitignored. The shots fan out above the dot on Both, and they fade when that side of the globe turns away.
+
+`private/` is listed in `.gitignore`. A local `npm run build` still copies whatever is in `private/` into `dist/`, so do not publish that build.

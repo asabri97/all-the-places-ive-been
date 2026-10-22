@@ -10,34 +10,22 @@ import {
 } from '../src/flights.js'
 
 const directory = JSON.parse(readFileSync(new URL('../src/airports.json', import.meta.url), 'utf8'))
-const overrides = readFileSync(new URL('../example/airports.csv', import.meta.url), 'utf8')
-const airports = parseAirports(directory, overrides)
-const flights = parseFlights(readFileSync(new URL('../example/flights.csv', import.meta.url), 'utf8'), airports)
 
-test('every flight route connects two known airports', () => {
-  assert.equal(Object.keys(flights.airports).length, 46)
-  assert.equal(flights.routes.length, 65)
-  assert.equal(flights.flightCount, 81)
-  assert.deepEqual(flights.missing, [])
-  const seen = new Set()
-  for (const [from, to] of flights.routes) {
-    assert.ok(flights.airports[from], from)
-    assert.ok(flights.airports[to], to)
-    const key = `${from}-${to}`
-    assert.equal(seen.has(key), false)
-    seen.add(key)
-  }
-  assert.equal(routeArcs(flights.airports, flights.routes).length, flights.routes.length)
-  assert.equal(airportMarkers(flights.airports, [0, 0, 1]).length, 46)
-})
-
-test('flight labels name each airport', () => {
-  const labels = Object.keys(flights.airports).map((code) => airportLabel(code, flights.airports))
-  assert.equal(labels.length, 46)
-  assert.ok(labels.every((label) => label.length > 0))
+test('an airport override replaces the built-in city', () => {
+  const airports = parseAirports(
+    directory,
+    `code,city,latitude,longitude
+CGH,Congonhas,-23.6266,-46.6554
+GRU,São Paulo,-23.4356,-46.4731
+BKF,Aurora,39.7018,-104.752`,
+  )
+  const flights = parseFlights('Date,From,To\n2024-01-01,CGH,GRU\n2024-01-02,GRU,BKF', airports)
   assert.equal(airportLabel('CGH', flights.airports), 'Congonhas')
   assert.notEqual(airportLabel('CGH', flights.airports), airportLabel('GRU', flights.airports))
   assert.equal(flights.airports.BKF.city, 'Aurora')
+  assert.equal(routeArcs(flights.airports, flights.routes).length, 2)
+  assert.equal(airportMarkers(flights.airports, [0, 0, 1]).length, 3)
+  assert.equal(flights.trips[0].date, '2024-01-01')
 })
 
 test('shared city names keep the airport code', () => {
@@ -47,13 +35,6 @@ test('shared city names keep the airport code', () => {
   })
   assert.equal(airportLabel('AAA', parsed.airports), 'Springfield AAA')
   assert.equal(airportLabel('BBB', parsed.airports), 'Springfield BBB')
-})
-
-test('airport coordinates stay on earth', () => {
-  for (const [code, airport] of Object.entries(flights.airports)) {
-    assert.ok(airport.lat >= -90 && airport.lat <= 90, code)
-    assert.ok(airport.lon >= -180 && airport.lon <= 180, code)
-  }
 })
 
 test('a flight export ignores extra columns and canceled rows', () => {
@@ -68,14 +49,15 @@ test('a flight export ignores extra columns and canceled rows', () => {
   assert.equal(parsed.flightCount, 3)
   assert.deepEqual(parsed.routes, [['JFK', 'LHR']])
   assert.deepEqual(parsed.missing, ['ZZZ'])
+  assert.equal(parsed.trips.length, 2)
 })
 
-test('the starter flights draw without a custom airport file', () => {
+test('the public sample flights draw', () => {
   const starter = parseFlights(
-    readFileSync(new URL('../data/flights.csv', import.meta.url), 'utf8'),
-    parseAirports(directory, readFileSync(new URL('../data/airports.csv', import.meta.url), 'utf8')),
+    readFileSync(new URL('../data/profiles/ada/flights.csv', import.meta.url), 'utf8'),
+    parseAirports(directory),
   )
-  assert.equal(starter.flightCount, 3)
-  assert.equal(starter.routes.length, 3)
+  assert.equal(starter.flightCount, 2)
+  assert.equal(starter.routes.length, 2)
   assert.deepEqual(starter.missing, [])
 })

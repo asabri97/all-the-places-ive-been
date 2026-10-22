@@ -21,6 +21,26 @@ export function slug(name) {
     .replace(/(^-|-$)/g, '')
 }
 
+const PHOTO_PLACE = {
+  amsterdam: 'netherlands',
+}
+
+export function groupPlacePhotos(filenames) {
+  const grouped = new Map()
+  for (const file of filenames) {
+    const base = file.split('/').pop()
+    const match = base.match(/^([a-z][a-z0-9-]*?)(\d+)?\.(jpe?g|png|webp)$/i)
+    if (!match?.[1]) continue
+    const id = PHOTO_PLACE[slug(match[1])] || slug(match[1])
+    const list = grouped.get(id) || []
+    list.push({ n: match[2] ? Number(match[2]) : 0, file: base })
+    grouped.set(id, list)
+  }
+  return Object.fromEntries(
+    [...grouped].map(([id, list]) => [id, list.sort((a, b) => a.n - b.n || a.file.localeCompare(b.file)).map((item) => item.file)]),
+  )
+}
+
 export function parsePlaces(text) {
   const rows = parseCsv(text)
   if (rows.length === 0) return []

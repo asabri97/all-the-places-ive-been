@@ -35,6 +35,7 @@ export function parseFlights(text, airports) {
   const rows = parseCsv(text)
   const col = columns(rows[0] ?? [])
   const routes = []
+  const trips = []
   const seen = new Set()
   const used = []
   const missing = new Set()
@@ -52,6 +53,7 @@ export function parseFlights(text, airports) {
     if (!fromKnown) missing.add(from)
     if (!toKnown) missing.add(to)
     if (!fromKnown || !toKnown) continue
+    trips.push({ date: cell(row, col.date), from, to })
     if (!used.includes(from)) used.push(from)
     if (!used.includes(to)) used.push(to)
     const key = `${from}>${to}`
@@ -63,6 +65,7 @@ export function parseFlights(text, airports) {
   return {
     flightCount,
     routes,
+    trips,
     airports: Object.fromEntries(used.map((code) => [code, airports[code]])),
     missing: [...missing],
   }
@@ -83,9 +86,10 @@ export function airportMarkers(airports, color) {
   }))
 }
 
-export function routeArcs(airports, routes) {
+export function routeArcs(airports, routes, color) {
   return routes.map(([from, to]) => ({
     from: [airports[from].lat, airports[from].lon],
     to: [airports[to].lat, airports[to].lon],
+    ...(color ? { color } : {}),
   }))
 }
