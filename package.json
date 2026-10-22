@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "example": "VITE_DATA=example vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test test/places.test.js test/flights.test.js"

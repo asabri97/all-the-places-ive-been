@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { buildPlaces, counts, focusAngles, places, slug } from '../src/places.js'
+import { counts, focusAngles, parsePlaces, slug } from '../src/places.js'
+
+const places = parsePlaces(readFileSync(new URL('../example/places.csv', import.meta.url), 'utf8'))
 
 const BEEN_NAMES = `Albania
 Austria
@@ -99,7 +102,19 @@ test('lived countries replace been for the same place', () => {
   assert.equal(byName.Germany, 'lived')
   assert.equal(byName.Pakistan, 'lived')
   assert.equal(byName['United States of America'], 'lived')
+  assert.equal(places.find((place) => place.name === 'United States of America').label, 'United States')
   assert.deepEqual(counts(places), { lived: 3, been: 58, wish: 23 })
+})
+
+test('a later lived row wins over been', () => {
+  const parsed = parsePlaces(`name,status,latitude,longitude
+Germany,been,1,2
+Germany,lived,52.52,13.405
+Iceland,wish,64.1,-21.9
+Iceland,been,64.1,-21.9`)
+  assert.equal(parsed.find((place) => place.name === 'Germany').status, 'lived')
+  assert.equal(parsed.find((place) => place.name === 'Germany').location[0], 52.52)
+  assert.equal(parsed.find((place) => place.name === 'Iceland').status, 'been')
 })
 
 test('wish places stay separate from places already visited', () => {
@@ -109,7 +124,7 @@ test('wish places stay separate from places already visited', () => {
 })
 
 test('coordinates stay on earth and slugs are stable', () => {
-  for (const place of buildPlaces()) {
+  for (const place of places) {
     const [lat, lon] = place.location
     assert.ok(lat >= -90 && lat <= 90)
     assert.ok(lon >= -180 && lon <= 180)
@@ -121,4 +136,9 @@ test('focus angles face a known city', () => {
   const berlin = focusAngles(52.52, 13.405)
   assert.ok(berlin.phi < -1.7 && berlin.phi > -1.9)
   assert.ok(berlin.theta > 0.8 && berlin.theta < 1)
+})
+
+test('the starter list is a small valid globe', () => {
+  const starter = parsePlaces(readFileSync(new URL('../data/places.csv', import.meta.url), 'utf8'))
+  assert.deepEqual(counts(starter), { lived: 1, been: 2, wish: 1 })
 })

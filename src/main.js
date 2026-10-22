@@ -1,15 +1,28 @@
 import createGlobe from 'cobe'
+import starterAirports from '../data/airports.csv?raw'
+import starterFlights from '../data/flights.csv?raw'
+import starterPlaces from '../data/places.csv?raw'
+import exampleAirports from '../example/airports.csv?raw'
+import exampleFlights from '../example/flights.csv?raw'
+import examplePlaces from '../example/places.csv?raw'
+import directory from './airports.json'
 import {
   airportLabel,
   airportMarkers,
-  airports,
   flightColor,
-  flightCount,
+  parseAirports,
+  parseFlights,
   routeArcs,
-  routes,
 } from './flights.js'
-import { MARKER_COLOR, MARKER_SIZE, counts, focusAngles, places } from './places.js'
+import { MARKER_COLOR, MARKER_SIZE, counts, focusAngles, parsePlaces } from './places.js'
 import './style.css'
+
+const useExample = import.meta.env.VITE_DATA === 'example'
+const places = parsePlaces(useExample ? examplePlaces : starterPlaces)
+const flights = parseFlights(
+  useExample ? exampleFlights : starterFlights,
+  parseAirports(directory, useExample ? exampleAirports : starterAirports),
+)
 
 const state = {
   phi: focusAngles(28, 12).phi,
@@ -42,7 +55,8 @@ const stage = app.querySelector('.stage')
 const caption = app.querySelector('.caption')
 const legend = app.querySelector('.legend')
 const placesCaption = caption.textContent
-const flightsCaption = `${flightCount} flights · ${routes.length} routes`
+const missingAirports = flights.missing.length ? ` · missing ${flights.missing.join(', ')}` : ''
+const flightsCaption = `${flights.flightCount} flights · ${flights.routes.length} routes${missingAirports}`
 
 function markersFor() {
   return places.map((place) => ({
@@ -54,8 +68,7 @@ function markersFor() {
 }
 
 function labelFor(place) {
-  if (place.name === 'United States of America') return 'United States'
-  return place.name
+  return place.label || place.name
 }
 
 let spin = 1
@@ -131,16 +144,16 @@ const globe = createGlobe(canvas, {
 })
 
 function showMode(mode) {
-  const flights = mode === 'flights'
+  const flightsMode = mode === 'flights'
   for (const button of app.querySelectorAll('.switch-btn')) {
     button.setAttribute('aria-pressed', String(button.dataset.mode === mode))
   }
-  caption.textContent = flights ? flightsCaption : placesCaption
-  legend.hidden = flights
-  stage.classList.toggle('is-flights', flights)
+  caption.textContent = flightsMode ? flightsCaption : placesCaption
+  legend.hidden = flightsMode
+  stage.classList.toggle('is-flights', flightsMode)
   globe.update({
-    markers: flights ? airportMarkers(flightColor) : markersFor(),
-    arcs: flights ? routeArcs() : [],
+    markers: flightsMode ? airportMarkers(flights.airports, flightColor) : markersFor(),
+    arcs: flightsMode ? routeArcs(flights.airports, flights.routes) : [],
   })
   placeLabels()
 }
@@ -159,10 +172,10 @@ function placeLabels() {
   }
 }
 
-for (const code of Object.keys(airports)) {
+for (const code of Object.keys(flights.airports)) {
   const label = document.createElement('div')
   label.className = 'flight-label'
-  label.textContent = airportLabel(code)
+  label.textContent = airportLabel(code, flights.airports)
   label.style.positionAnchor = `--cobe-apt-${code.toLowerCase()}`
   label.style.opacity = `var(--cobe-visible-apt-${code.toLowerCase()}, 0)`
   frameEl.append(label)

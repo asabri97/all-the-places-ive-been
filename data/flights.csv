@@ -1,0 +1,4 @@
+Date,From,To,Canceled
+2024-06-01,JFK,LHR,false
+2024-06-08,LHR,CDG,false
+2024-06-15,CDG,JFK,false

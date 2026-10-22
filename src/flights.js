@@ -1,146 +1,91 @@
-export const flightCount = 81
+import { cell, columns, parseCsv } from './csv.js'
 
 export const flightColor = [0.3, 0.5, 1]
 
-const labelNames = {
-  CGH: 'Congonhas',
-  HND: 'Haneda',
-  NRT: 'Narita',
+function knownAirport(airports, code) {
+  const airport = airports[code]
+  return airport && Number.isFinite(airport.lat) && Number.isFinite(airport.lon)
 }
 
-export function airportLabel(code) {
-  return labelNames[code] || airports[code][0]
+export function parseAirports(directory, overridesText = '') {
+  const airports = {}
+  for (const [code, [lat, lon, city]] of Object.entries(directory)) {
+    airports[code] = { city, lat, lon }
+  }
+
+  const rows = parseCsv(overridesText)
+  if (rows.length < 2) return airports
+  const col = columns(rows[0])
+  for (const row of rows.slice(1)) {
+    const code = cell(row, col.code).toUpperCase()
+    if (!/^[A-Z0-9]{3,4}$/.test(code)) continue
+    const current = airports[code]
+    const lat = Number(cell(row, col.latitude))
+    const lon = Number(cell(row, col.longitude))
+    airports[code] = {
+      city: cell(row, col.city) || current?.city || code,
+      lat: Number.isFinite(lat) ? lat : current?.lat,
+      lon: Number.isFinite(lon) ? lon : current?.lon,
+    }
+  }
+  return airports
 }
 
-export const airports = {
-  ANC: ['Anchorage', 61.1744, -149.9962],
-  BER: ['Berlin', 52.3667, 13.5033],
-  BGO: ['Bergen', 60.2934, 5.2181],
-  BGY: ['Milan Bergamo', 45.6739, 9.7042],
-  BKF: ['Aurora', 39.7018, -104.752],
-  CAN: ['Guangzhou', 23.3924, 113.2988],
-  CDG: ['Paris', 49.0097, 2.5479],
-  CGH: ['São Paulo', -23.6266, -46.6554],
-  CJC: ['Calama', -22.4982, -68.9036],
-  CPH: ['Copenhagen', 55.618, 12.6508],
-  DFW: ['Dallas', 32.8998, -97.0403],
-  DUB: ['Dublin', 53.4213, -6.2701],
-  FLL: ['Fort Lauderdale', 26.0726, -80.1527],
-  FRA: ['Frankfurt', 50.0379, 8.5622],
-  GIG: ['Rio de Janeiro', -22.8099, -43.2505],
-  GMP: ['Seoul', 37.5583, 126.7906],
-  GRU: ['São Paulo', -23.4356, -46.4731],
-  GYD: ['Baku', 40.4675, 50.0467],
-  HND: ['Tokyo', 35.5494, 139.7798],
-  HOM: ['Homer', 59.6456, -151.4766],
-  IAH: ['Houston', 29.9902, -95.3368],
-  IGU: ['Foz do Iguaçu', -25.6003, -54.485],
-  IST: ['Istanbul', 41.2753, 28.7519],
-  KHH: ['Kaohsiung', 22.5771, 120.35],
-  KHI: ['Karachi', 24.9065, 67.1608],
-  KTM: ['Kathmandu', 27.6966, 85.3591],
-  LBB: ['Lubbock', 33.6636, -101.8228],
-  LHE: ['Lahore', 31.5216, 74.4036],
-  LHR: ['London', 51.47, -0.4543],
-  LIH: ['Lihue', 21.976, -159.339],
-  MIA: ['Miami', 25.7959, -80.287],
-  MXP: ['Milan', 45.6306, 8.7281],
-  NRT: ['Tokyo', 35.772, 140.3929],
-  ORD: ['Chicago', 41.9742, -87.9073],
-  PBH: ['Paro', 27.4032, 89.4246],
-  PHX: ['Phoenix', 33.4343, -112.0116],
-  PMC: ['Puerto Montt', -41.4389, -73.094],
-  PNT: ['Puerto Natales', -51.6715, -72.5284],
-  PUQ: ['Punta Arenas', -53.0026, -70.8546],
-  PVG: ['Shanghai', 31.1443, 121.8083],
-  SCL: ['Santiago', -33.393, -70.7858],
-  SEA: ['Seattle', 47.4502, -122.3088],
-  SHJ: ['Sharjah', 25.3286, 55.5172],
-  SJO: ['San José', 9.9939, -84.2088],
-  TAE: ['Daegu', 35.8941, 128.6588],
-  TPE: ['Taipei', 25.0797, 121.2342],
+export function parseFlights(text, airports) {
+  const rows = parseCsv(text)
+  const col = columns(rows[0] ?? [])
+  const routes = []
+  const seen = new Set()
+  const used = []
+  const missing = new Set()
+  let flightCount = 0
+
+  for (const row of rows.slice(1)) {
+    const from = cell(row, col.from).toUpperCase()
+    const to = cell(row, col.to).toUpperCase()
+    if (!from || !to) continue
+    const canceled = cell(row, col.canceled).toLowerCase()
+    if (canceled === 'true' || canceled === 'yes' || canceled === '1') continue
+    flightCount += 1
+    const fromKnown = knownAirport(airports, from)
+    const toKnown = knownAirport(airports, to)
+    if (!fromKnown) missing.add(from)
+    if (!toKnown) missing.add(to)
+    if (!fromKnown || !toKnown) continue
+    if (!used.includes(from)) used.push(from)
+    if (!used.includes(to)) used.push(to)
+    const key = `${from}>${to}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    routes.push([from, to])
+  }
+
+  return {
+    flightCount,
+    routes,
+    airports: Object.fromEntries(used.map((code) => [code, airports[code]])),
+    missing: [...missing],
+  }
 }
 
-export const routes = [
-  ['BER', 'LHR'],
-  ['PVG', 'FRA'],
-  ['LHR', 'IAH'],
-  ['FRA', 'BER'],
-  ['IST', 'BER'],
-  ['LHR', 'BER'],
-  ['FLL', 'SJO'],
-  ['BER', 'DUB'],
-  ['DUB', 'ORD'],
-  ['ORD', 'IAH'],
-  ['IAH', 'FRA'],
-  ['GYD', 'SHJ'],
-  ['SHJ', 'KHI'],
-  ['KHI', 'LHE'],
-  ['LHE', 'IST'],
-  ['BER', 'MIA'],
-  ['MIA', 'IAH'],
-  ['IAH', 'TPE'],
-  ['KHH', 'GMP'],
-  ['TAE', 'PVG'],
-  ['IAH', 'LHR'],
-  ['HND', 'PVG'],
-  ['IAH', 'FLL'],
-  ['SJO', 'DFW'],
-  ['DFW', 'LBB'],
-  ['LBB', 'IAH'],
-  ['IAH', 'SCL'],
-  ['SCL', 'CJC'],
-  ['CJC', 'SCL'],
-  ['SCL', 'PMC'],
-  ['PMC', 'PUQ'],
-  ['PNT', 'SCL'],
-  ['SCL', 'GRU'],
-  ['GRU', 'IGU'],
-  ['IGU', 'CGH'],
-  ['GIG', 'GRU'],
-  ['GRU', 'FRA'],
-  ['IAH', 'CDG'],
-  ['CDG', 'BER'],
-  ['BER', 'IST'],
-  ['IST', 'KTM'],
-  ['KTM', 'PBH'],
-  ['PBH', 'KTM'],
-  ['KTM', 'CAN'],
-  ['CAN', 'IST'],
-  ['BER', 'CPH'],
-  ['CPH', 'BGO'],
-  ['BGO', 'CPH'],
-  ['CPH', 'BER'],
-  ['IAH', 'SEA'],
-  ['SEA', 'ANC'],
-  ['ANC', 'SEA'],
-  ['SEA', 'IAH'],
-  ['BER', 'BGY'],
-  ['MXP', 'BER'],
-  ['IAH', 'PHX'],
-  ['PHX', 'LIH'],
-  ['LIH', 'PHX'],
-  ['PHX', 'IAH'],
-  ['BER', 'FRA'],
-  ['FRA', 'IAH'],
-  ['BKF', 'HOM'],
-  ['BER', 'GYD'],
-  ['HOM', 'BKF'],
-  ['PVG', 'NRT'],
-]
+export function airportLabel(code, airports) {
+  const city = airports[code].city
+  const shared = Object.values(airports).filter((airport) => airport.city === city).length > 1
+  return shared ? `${city} ${code}` : city
+}
 
-export function airportMarkers(color) {
-  return Object.entries(airports).map(([code, [, lat, lon]]) => ({
+export function airportMarkers(airports, color) {
+  return Object.entries(airports).map(([code, airport]) => ({
     id: `apt-${code.toLowerCase()}`,
-    location: [lat, lon],
+    location: [airport.lat, airport.lon],
     size: 0.02,
     color,
   }))
 }
 
-export function routeArcs() {
+export function routeArcs(airports, routes) {
   return routes.map(([from, to]) => ({
-    from: [airports[from][1], airports[from][2]],
-    to: [airports[to][1], airports[to][2]],
+    from: [airports[from].lat, airports[from].lon],
+    to: [airports[to].lat, airports[to].lon],
   }))
 }
