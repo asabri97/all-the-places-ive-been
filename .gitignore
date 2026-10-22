@@ -3,5 +3,6 @@ dist
 .DS_Store
 private/
 places.mov
-example/
+example/*
+!example/places.gif
 assets/
