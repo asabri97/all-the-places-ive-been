@@ -1,0 +1,189 @@
+@font-face {
+  font-family: 'Geist Pixel';
+  src: url('../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #fff;
+  --text: #1a222b;
+  --dim: #69737d;
+  --ink: #0045f6;
+  --lived: #e23d2b;
+  --wish: #12a37a;
+  --font: 'Geist Pixel', ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font);
+  letter-spacing: 0.015em;
+  word-spacing: -0.1em;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12vh 1.5rem 3rem;
+}
+
+.stage {
+  position: relative;
+  width: min(560px, 92vw);
+  height: min(560px, 92vw);
+}
+
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity 0.8s ease;
+}
+
+.stage canvas.is-ready {
+  opacity: 1;
+}
+
+.stage canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.stage.is-flights .marker-label {
+  display: none;
+}
+
+.flight-label {
+  display: none;
+  position: absolute;
+  z-index: 2;
+  bottom: anchor(top);
+  left: anchor(center);
+  translate: -50% 0;
+  margin-bottom: 8px;
+  padding: 0.15rem 0.35rem;
+  background: #4d80ff;
+  color: var(--bg);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.stage.is-flights .flight-label {
+  display: block;
+}
+
+.switch {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.15rem;
+}
+
+.switch-btn {
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  padding: 0.15rem 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.switch-btn[aria-pressed='true'] {
+  color: var(--ink);
+}
+
+.switch-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.marker-label {
+  position: absolute;
+  z-index: 2;
+  bottom: anchor(top);
+  left: anchor(center);
+  translate: -50% 0;
+  margin-bottom: 8px;
+  padding: 0.15rem 0.35rem;
+  background: var(--lived);
+  color: var(--bg);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.caption {
+  margin: 1.4rem 0 0;
+  color: var(--dim);
+  font-size: 14px;
+  text-align: center;
+}
+
+.legend[hidden] {
+  display: none;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.dot.lived {
+  width: 8px;
+  height: 8px;
+  background: var(--lived);
+}
+
+.dot.been {
+  width: 6px;
+  height: 6px;
+}
+
+.dot.wish {
+  width: 6px;
+  height: 6px;
+  background: var(--wish);
+}
