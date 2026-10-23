@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { flightsTouching, markTogether, markerFor, mergeFlights, mergePlaces, choosePeople, buildProfile, parseShared, togetherPhotoList, SHARED_COLOR } from '../src/profiles.js'
+import { MARKER_COLOR } from '../src/places.js'
+import { flightsTouching, markTogether, markerFor, mergeFlights, mergePlaces, choosePeople, buildProfile, parseShared, togetherPhotoList, comparisonIds, peopleInView, SHARED_COLOR } from '../src/profiles.js'
 
 const directory = {
   JFK: [40.64, -73.78, 'New York'],
@@ -68,10 +69,41 @@ Berlin,ada leo mia`)
   assert.deepEqual(london.together, ['ada', 'leo'])
   assert.equal(paris.together, undefined)
   assert.deepEqual(both.find((place) => place.name === 'Berlin').together, ['ada', 'leo', 'mia'])
+  const adaOnly = markTogether(mergePlaces([ada, leo]), trips, ['ada'])
+  assert.equal(adaOnly.find((place) => place.name === 'London').together, undefined)
+  const withMia = markTogether(mergePlaces([ada, leo]), trips, ['ada', 'mia'])
+  assert.equal(withMia.find((place) => place.name === 'London').together, undefined)
+  assert.deepEqual(comparisonIds([ada, leo], 'ada', 'leo,ada,nope'), ['leo'])
+  assert.deepEqual(peopleInView([ada, leo], 'ada', ['leo']).map((person) => person.id), ['ada', 'leo'])
   const photos = new Map([['london', ['/japan1.jpg', '/japan2.jpg']]])
   assert.deepEqual(togetherPhotoList(london, photos, true), ['/japan1.jpg', '/japan2.jpg'])
   assert.deepEqual(togetherPhotoList(london, photos, false), [])
   assert.deepEqual(togetherPhotoList(paris, photos, true), [])
   assert.deepEqual(markerFor(london).color, SHARED_COLOR)
   assert.deepEqual(markerFor(london, true).color, [1, 1, 1])
+  const homes = { ada: [0.2, 0.1, 0.1], leo: [0.9, 0.4, 0.1] }
+  assert.deepEqual(markerFor(london, false, homes).color, homes.leo)
+  const bothLived = {
+    ...london,
+    people: [
+      { id: 'ada', status: 'lived' },
+      { id: 'leo', status: 'lived' },
+    ],
+  }
+  assert.deepEqual(markerFor(bothLived, false, homes).color, [1, 1, 1])
+  const japan = {
+    id: 'japan',
+    location: [35, 139],
+    status: 'lived',
+    shared: true,
+    people: [
+      { id: 'saharsh', status: 'lived' },
+      { id: 'hammad', status: 'been' },
+    ],
+  }
+  assert.deepEqual(markerFor(japan).color, SHARED_COLOR)
+  assert.deepEqual(markerFor(japan, false, { saharsh: [0.7, 0.2, 0.4] }).color, [0.7, 0.2, 0.4])
+  const egypt = { id: 'egypt', location: [30, 31], status: 'lived', shared: false, people: [{ id: 'hammad', status: 'lived' }] }
+  assert.deepEqual(markerFor(egypt).color, MARKER_COLOR.lived)
+  assert.deepEqual(markerFor(egypt, false, { hammad: [0.9, 0.4, 0.1] }).color, [0.9, 0.4, 0.1])
 })

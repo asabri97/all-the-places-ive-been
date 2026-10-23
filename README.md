@@ -6,7 +6,7 @@ A small globe of places you have lived, been, and still want to see, plus the fl
   <img src="example/places.gif" alt="The example globe" width="640">
 </div>
 
-`data/profiles/` holds sample people, Ada and Leo. Your own globe stays in `private/profiles/`, which git ignores.
+`data/profiles/` holds sample people, Ada and Leo. Your own globe stays in `private/profiles/`. That folder and `assets/` are not part of this repository. They can live in a separate private repository and be linked back in. Without those links, the globe shows Ada and Leo.
 
 ## Run it
 
@@ -15,9 +15,9 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints. With nothing in `private/`, you get Ada and Leo. Under the globe, Places and Flights switch the view, and the names switch the person. Both draws every person at once. A purple dot means both lists include that place. A polaroid means a trip taken together. The second person's routes are drawn in orange.
+Open the URL Vite prints. With nothing in `private/`, you get Ada and Leo. Under the globe, Places and Flights switch the view, and the names switch who the globe belongs to. The big name on the right is that person. Click another name there to add the trips you took with them. A purple dot means those lists both include the place. A polaroid means you were there together. Added people's routes are drawn in orange.
 
-A link opens one person directly: `?person=ada`, or `?person=both`.
+A link opens one person directly: `?person=ada`. Add someone with `&with=leo`, or several people with `&with=leo,mia`.
 
 Click a dot and the globe turns to it. The card says whether that place was lived, been, or wished, and how many flights landed closer to it than to any other dot.
 
@@ -74,8 +74,8 @@ place,people
 Germany,abrish hammad
 ```
 
-With three or four people, name only the ones who went: `Japan,abrish hammad`. On Both, that polaroid shows when at least two of them are in the view.
+With three or four people, name only the ones who went: `Japan,abrish hammad`. That polaroid shows when the main person and at least one of those names are selected.
 
-A picture of a trip you took together can be several shots. Name them `japan1.jpg`, `japan2.jpg`, and so on, and put them in `assets/`. That folder is gitignored. The shots fan out above the dot on Both, and they fade when that side of the globe turns away.
+A picture of a trip you took together can be several shots. Name them `japan1.jpg`, `japan2.jpg`, and so on, and put them in `assets/`. That folder is gitignored. The shots fan out above the dot when that trip is selected, and they fade when that side of the globe turns away.
 
 `private/` is listed in `.gitignore`. A local `npm run build` still copies whatever is in `private/` into `dist/`, so do not publish that build.

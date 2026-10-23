@@ -6,6 +6,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Geist Display';
+  src: url('../node_modules/geist/dist/fonts/geist-sans/Geist-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --bg: #fff;
@@ -39,16 +47,100 @@ body {
 
 .page {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr min(560px, 62vw) minmax(220px, 1fr);
   align-items: center;
-  padding: 12vh 1.5rem 3rem;
+  justify-items: center;
+  column-gap: 1.5rem;
+  padding: 6vh 2vw 3rem;
+}
+
+.stage {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.names {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+  align-self: center;
+  z-index: 5;
+  max-width: 100%;
+}
+
+.switch,
+.card,
+.caption,
+.legend {
+  grid-column: 1 / -1;
+}
+
+.name {
+  margin: 0;
+  font-family: 'Geist Display', 'Arial Black', Impact, sans-serif;
+  font-weight: 900;
+  font-size: clamp(42px, 5.4vw, 96px);
+  line-height: 0.78;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: #111;
+}
+
+.name-with {
+  display: block;
+  margin-left: 0.72em;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #d4d4d4;
+  cursor: pointer;
+  text-align: left;
+}
+
+.name-with[aria-pressed='true'] {
+  color: #111;
+}
+
+.name-with:hover {
+  color: #111;
+}
+
+.name-with:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 4px;
 }
 
 .stage {
   position: relative;
   width: min(560px, 92vw);
   height: min(560px, 92vw);
+}
+
+@media (max-width: 980px) {
+  .page {
+    grid-template-columns: 1fr;
+    padding-top: 8vh;
+  }
+
+  .stage,
+  .names,
+  .switch,
+  .card,
+  .caption,
+  .legend {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .names {
+    justify-self: stretch;
+    margin-top: 1.5rem;
+  }
+
+  .name {
+    font-size: clamp(48px, 16vw, 88px);
+  }
 }
 
 .stage canvas {
@@ -149,6 +241,10 @@ body {
   background: #7b52db;
 }
 
+.marker-label.is-shared-home {
+  background: #111;
+}
+
 .marker-hit {
   position: absolute;
   z-index: 3;
@@ -216,6 +312,23 @@ body {
   padding: 8px 6px;
 }
 
+.lived-split {
+  position: absolute;
+  z-index: 2;
+  width: 10px;
+  height: 10px;
+  top: anchor(center);
+  left: anchor(center);
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.dot.lived-many {
+  width: 8px;
+  height: 8px;
+}
+
 .together-dot {
   position: absolute;
   z-index: 2;
@@ -233,7 +346,8 @@ body {
 
 .stage.is-flights .marker-hit,
 .stage.is-flights .polaroid,
-.stage.is-flights .together-dot {
+.stage.is-flights .together-dot,
+.stage.is-flights .lived-split {
   display: none;
 }
 

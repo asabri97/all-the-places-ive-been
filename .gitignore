@@ -1,8 +1,8 @@
 node_modules
 dist
 .DS_Store
-private/
+/private
+/assets
 places.mov
 example/*
 !example/places.gif
-assets/

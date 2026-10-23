@@ -28,8 +28,22 @@ export function choosePeople(profiles, personParam) {
 }
 
 export function activePerson(profiles, personParam) {
-  if (personParam === 'both' && profiles.length > 1) return 'both'
+  if (personParam === 'both') return choosePeople(profiles, '')[0]?.id || ''
   return choosePeople(profiles, personParam)[0]?.id || ''
+}
+
+export function comparisonIds(profiles, mainId, withParam) {
+  const known = new Set(profiles.map((profile) => profile.id))
+  return [...new Set(String(withParam || '').split(','))]
+    .map((id) => id.trim().toLowerCase())
+    .filter((id) => known.has(id) && id !== mainId)
+}
+
+export function peopleInView(profiles, mainId, withIds) {
+  const main = choosePeople(profiles, mainId)[0]
+  if (!main) return []
+  const extras = withIds.map((id) => profiles.find((profile) => profile.id === id)).filter(Boolean)
+  return [main, ...extras]
 }
 
 export function mergePlaces(people) {
@@ -78,23 +92,36 @@ export function markTogether(places, trips, selectedIds) {
   const visible = new Map()
   for (const trip of trips) {
     const present = trip.people.filter((id) => selected.has(id))
-    const show = selectedIds.length < 2 ? present.length === 1 : present.length >= 2
-    if (show) visible.set(trip.id, trip.people)
+    if (present.length >= 2) visible.set(trip.id, trip.people)
   }
   return places.map((place) => (visible.has(place.id) ? { ...place, together: visible.get(place.id) } : place))
 }
 
 export function togetherPhotoList(place, photos, showTogether) {
-  if (!showTogether || !place.shared) return []
+  if (!showTogether) return []
   return photos.get(place.id) || []
 }
 
-export function markerFor(place, together = false) {
+export function livedBy(place) {
+  return (place.people || []).filter((person) => person.status === 'lived')
+}
+
+export function markerFor(place, together = false, livedColors = null) {
+  const livers = livedColors ? livedBy(place) : []
+  const oneHome = livers.length === 1
+  const sharedHome = livers.length > 1
   return {
     id: place.id,
     location: place.location,
-    size: together ? 0.02 : place.shared ? 0.04 : MARKER_SIZE[place.status],
-    color: together ? [1, 1, 1] : place.shared ? SHARED_COLOR : MARKER_COLOR[place.status],
+    size: together || sharedHome ? 0.02 : oneHome ? MARKER_SIZE.lived : place.shared ? 0.04 : MARKER_SIZE[place.status],
+    color:
+      together || sharedHome
+        ? [1, 1, 1]
+        : oneHome
+          ? livedColors[livers[0].id] || MARKER_COLOR.lived
+          : place.shared
+            ? SHARED_COLOR
+            : MARKER_COLOR[place.status],
   }
 }
 
