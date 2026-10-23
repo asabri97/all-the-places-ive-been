@@ -48,11 +48,11 @@ body {
 .page {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) min(560px, 62vw) max-content;
+  grid-template-columns: minmax(0, 1fr) min(560px, 62vw) minmax(0, 1fr);
   align-items: center;
   justify-items: center;
   column-gap: 1.5rem;
-  padding: 6vh 0.65rem 3rem 2vw;
+  padding: 6vh 0.65rem 3rem;
 }
 
 .stage {
@@ -63,17 +63,24 @@ body {
 .names {
   grid-column: 3;
   grid-row: 1;
-  justify-self: start;
+  justify-self: stretch;
   align-self: center;
   z-index: 5;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   max-height: calc(var(--globe) * 0.7);
   min-height: 0;
+  container-type: inline-size;
   padding-right: 0.04em;
   --globe: 560px;
-  --name-size: clamp(40px, 5vw, 84px);
   transform: translateY(calc(var(--globe) * 0.05));
+}
+
+.names > .name,
+.names > .name-list {
+  --name-size: clamp(20px, 16cqw, 84px);
 }
 
 .switch,
@@ -86,6 +93,7 @@ body {
 .name {
   margin: 0;
   padding-right: 0.06em;
+  white-space: nowrap;
   font-family: 'Geist Display', 'Arial Black', Impact, sans-serif;
   font-weight: 900;
   font-size: var(--name-size, clamp(40px, 5vw, 84px));
