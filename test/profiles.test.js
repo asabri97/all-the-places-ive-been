@@ -48,6 +48,13 @@ test('shared places are the overlap', () => {
   assert.equal(london.status, 'lived')
   assert.deepEqual(london.people.map((person) => person.name), ['Ada', 'Leo'])
   assert.equal(berlin.shared, false)
+  const wished = mergePlaces([
+    buildProfile({ id: 'ada', placesText: 'name,status,latitude,longitude\nNew Zealand,wish,-41.2,174.7' }),
+    buildProfile({ id: 'saharsh', placesText: 'name,status,latitude,longitude\nNew Zealand,been,-41.2,174.7' }),
+  ])
+  const zealand = wished.find((place) => place.name === 'New Zealand')
+  assert.equal(zealand.shared, false)
+  assert.equal(zealand.status, 'been')
 })
 
 test('the latest flight is the pulse point', () => {
@@ -106,4 +113,20 @@ Berlin,ada leo mia`)
   const egypt = { id: 'egypt', location: [30, 31], status: 'lived', shared: false, people: [{ id: 'hammad', status: 'lived' }] }
   assert.deepEqual(markerFor(egypt).color, MARKER_COLOR.lived)
   assert.deepEqual(markerFor(egypt, false, { hammad: [0.9, 0.4, 0.1] }).color, [0.9, 0.4, 0.1])
+  const japanTrips = parseShared(`place,people
+Japan,abrish hammad
+Japan,abrish saharsh`)
+  const hammadSaharsh = markTogether([{ id: 'japan', name: 'Japan', people: [] }], japanTrips, ['hammad', 'saharsh'])
+  assert.equal(hammadSaharsh[0].together, undefined)
+  const abrishSaharsh = markTogether([{ id: 'japan', name: 'Japan', people: [] }], japanTrips, ['abrish', 'saharsh'])
+  assert.deepEqual(abrishSaharsh[0].together, ['abrish', 'saharsh'])
+  const italyTrips = parseShared(`place,people,photos
+Italy,abrish hammad,
+Italy,saharsh shahab,-`)
+  const italyPhotos = new Map([['italy', ['/italy.jpg']]])
+  const saharshShahab = markTogether([{ id: 'italy', name: 'Italy' }], italyTrips, ['saharsh', 'shahab'])
+  assert.deepEqual(saharshShahab[0].together, ['saharsh', 'shahab'])
+  assert.deepEqual(togetherPhotoList(saharshShahab[0], italyPhotos, true), [])
+  const abrishHammad = markTogether([{ id: 'italy', name: 'Italy' }], italyTrips, ['abrish', 'hammad'])
+  assert.deepEqual(togetherPhotoList(abrishHammad[0], italyPhotos, true), ['/italy.jpg'])
 })

@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints. With nothing in `private/`, you get Ada and Leo. Under the globe, Places and Flights switch the view, and the names switch who the globe belongs to. The big name on the right is that person. Click another name there to add the trips you took with them. A purple dot means those lists both include the place. A polaroid means you were there together. Added people's routes are drawn in orange.
+Open the URL Vite prints. With nothing in `private/`, you get Ada and Leo. Under the globe, Places and Flights switch the view, and the name menu switches who the globe belongs to. The big name on the right is that person. Click another name there to add the trips you took with them. A purple dot means more than one selected person has been there. A wish does not count. A polaroid means you were there together. Added people's routes are drawn in orange.
 
 A link opens one person directly: `?person=ada`. Add someone with `&with=leo`, or several people with `&with=leo,mia`.
 
@@ -25,7 +25,7 @@ The newest flight pulses on its arrival airport.
 
 ## Add yourself
 
-Create `private/profiles/<name>/`. The folder name is the link (`?person=ada`) and the label under the globe.
+Create `private/profiles/<name>/`. The folder name is the link (`?person=ada`) and the name in the menu.
 
 `places.csv`, one row per place. `status` is `lived`, `been`, or `wish`.
 

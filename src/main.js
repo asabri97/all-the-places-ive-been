@@ -33,10 +33,11 @@ const state = {
 }
 
 const app = document.querySelector('#app')
-const personButtons = profiles
+const currentName = profiles.find((profile) => profile.id === personParam)?.name || ''
+const personOptions = profiles
   .map(
     (profile) =>
-      `<button class="switch-btn person-btn" type="button" data-person="${profile.id}">${profile.name}</button>`,
+      `<button class="person-option" type="button" role="option" data-person="${profile.id}" aria-selected="${profile.id === personParam}"><span class="person-swatch"></span>${profile.name}</button>`,
   )
   .join('')
 app.innerHTML = `
@@ -50,7 +51,14 @@ app.innerHTML = `
         <button class="switch-btn mode-btn" type="button" data-mode="places" aria-pressed="true">Places</button>
         <button class="switch-btn mode-btn" type="button" data-mode="flights" aria-pressed="false">Flights</button>
       </div>
-      <div class="switch-group" role="tablist" aria-label="Person">${personButtons}</div>
+      <div class="person-menu">
+        <button class="switch-btn person-toggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="person-list">
+          <span class="person-swatch"></span>
+          <span class="person-current">${currentName}</span>
+          <span class="person-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="person-list" id="person-list" role="listbox" aria-label="Person" hidden>${personOptions}</div>
+      </div>
     </div>
     <article class="card" hidden>
       <button class="card-close" type="button">Close</button>
@@ -100,7 +108,18 @@ function renderNames() {
     const on = withIds.includes(profile.id)
     return `<button class="name name-with" type="button" data-with="${profile.id}" aria-pressed="${on}">${profile.name}</button>`
   }
-  namesEl.innerHTML = `<p class="name name-main">${main.name}</p>${others.map(companion).join('')}`
+  const scrollTop = namesEl.querySelector('.name-list')?.scrollTop || 0
+  namesEl.innerHTML = `<p class="name name-main">${main.name}</p><div class="name-list">${others.map(companion).join('')}</div>`
+  const list = namesEl.querySelector('.name-list')
+  if (list) list.scrollTop = scrollTop
+  syncNameList()
+}
+
+function syncNameList() {
+  const list = namesEl.querySelector('.name-list')
+  if (!list) return
+  const more = list.scrollHeight - list.clientHeight - list.scrollTop > 4
+  list.classList.toggle('is-more', more)
 }
 
 function viewPlaces() {
@@ -122,15 +141,21 @@ function wentTogether(place) {
   return people.has(personParam) && withIds.some((id) => people.has(id))
 }
 
-const LIVED_COLORS = [
-  { hex: '#e23d2b', rgb: [0.886, 0.239, 0.169] },
-  { hex: '#e07a1f', rgb: [0.878, 0.478, 0.122] },
-  { hex: '#c23b6e', rgb: [0.761, 0.231, 0.431] },
-  { hex: '#5b4ddb', rgb: [0.357, 0.302, 0.859] },
-]
+const LIVED_BY_ID = {
+  abrish: { hex: '#e23d2b', rgb: [0.886, 0.239, 0.169] },
+  hammad: { hex: '#e07a1f', rgb: [0.878, 0.478, 0.122] },
+  saharsh: { hex: '#c23b6e', rgb: [0.761, 0.231, 0.431] },
+  aly: { hex: '#5b4ddb', rgb: [0.357, 0.302, 0.859] },
+  kanza: { hex: '#1a8f8a', rgb: [0.102, 0.561, 0.541] },
+  mahnoor: { hex: '#8a5a2b', rgb: [0.541, 0.353, 0.169] },
+  shahab: { hex: '#2a6f97', rgb: [0.165, 0.435, 0.592] },
+}
+const LIVED_FALLBACK = Object.values(LIVED_BY_ID)
 
 function livedColorMap() {
-  return Object.fromEntries(profiles.map((person, index) => [person.id, LIVED_COLORS[index % LIVED_COLORS.length]]))
+  return Object.fromEntries(
+    profiles.map((person, index) => [person.id, LIVED_BY_ID[person.id] || LIVED_FALLBACK[index % LIVED_FALLBACK.length]]),
+  )
 }
 
 function markersFor(places) {
@@ -333,7 +358,7 @@ function render() {
   const flights = viewFlights()
   const flightsMode = mode === 'flights'
   setPressed('.mode-btn', 'mode', mode)
-  setPressed('.person-btn', 'person', personParam)
+  syncPersonMenu()
   renderNames()
   caption.textContent = captionFor(places, flights, flightsMode)
   legend.hidden = flightsMode
@@ -360,19 +385,95 @@ function render() {
   })
 }
 
+function syncPersonMenu() {
+  const colors = livedColorMap()
+  const current = profiles.find((profile) => profile.id === personParam)
+  const label = app.querySelector('.person-current')
+  const toggleSwatch = app.querySelector('.person-toggle .person-swatch')
+  if (label && current) label.textContent = current.name
+  if (toggleSwatch && current) toggleSwatch.style.background = colors[current.id].hex
+  for (const option of app.querySelectorAll('.person-option')) {
+    option.setAttribute('aria-selected', String(option.dataset.person === personParam))
+    const swatch = option.querySelector('.person-swatch')
+    if (swatch) swatch.style.background = colors[option.dataset.person].hex
+  }
+}
+
+function placePersonMenu() {
+  const toggle = app.querySelector('.person-toggle')
+  const list = app.querySelector('.person-list')
+  const below = window.innerHeight - toggle.getBoundingClientRect().bottom
+  const above = toggle.getBoundingClientRect().top
+  list.classList.toggle('is-up', below < list.scrollHeight + 12 && above > below)
+}
+
+function setPersonMenuOpen(open) {
+  const toggle = app.querySelector('.person-toggle')
+  const list = app.querySelector('.person-list')
+  toggle.setAttribute('aria-expanded', String(open))
+  list.hidden = !open
+  if (!open) {
+    list.classList.remove('is-up')
+    return
+  }
+  placePersonMenu()
+  list.querySelector('[aria-selected="true"]')?.focus()
+}
+
 app.querySelector('.switch').addEventListener('click', (event) => {
   const modeButton = event.target.closest('.mode-btn')
-  const personButton = event.target.closest('.person-btn')
-  if (modeButton) mode = modeButton.dataset.mode
-  if (personButton) {
-    personParam = personButton.dataset.person
-    withIds = []
-    writeUrl()
-  }
-  if (!modeButton && !personButton) return
+  if (!modeButton) return
+  mode = modeButton.dataset.mode
   card.hidden = true
   render()
 })
+
+const personMenu = app.querySelector('.person-menu')
+personMenu.querySelector('.person-toggle').addEventListener('click', () => {
+  const open = personMenu.querySelector('.person-toggle').getAttribute('aria-expanded') === 'true'
+  setPersonMenuOpen(!open)
+})
+personMenu.querySelector('.person-list').addEventListener('click', (event) => {
+  const option = event.target.closest('.person-option')
+  if (!option) return
+  if (option.dataset.person !== personParam) {
+    personParam = option.dataset.person
+    withIds = []
+    writeUrl()
+    card.hidden = true
+    render()
+  }
+  setPersonMenuOpen(false)
+  personMenu.querySelector('.person-toggle').focus()
+})
+personMenu.querySelector('.person-list').addEventListener('keydown', (event) => {
+  const options = [...personMenu.querySelectorAll('.person-option')]
+  const index = options.indexOf(document.activeElement)
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    const next = event.key === 'ArrowDown' ? Math.min(options.length - 1, index + 1) : Math.max(0, index - 1)
+    options[next]?.focus()
+  }
+  if (event.key === 'Home') {
+    event.preventDefault()
+    options[0]?.focus()
+  }
+  if (event.key === 'End') {
+    event.preventDefault()
+    options.at(-1)?.focus()
+  }
+  if (event.key === 'Escape') {
+    setPersonMenuOpen(false)
+    personMenu.querySelector('.person-toggle').focus()
+  }
+})
+document.addEventListener('click', (event) => {
+  if (!personMenu.contains(event.target)) setPersonMenuOpen(false)
+})
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') setPersonMenuOpen(false)
+})
+syncPersonMenu()
 
 namesEl.addEventListener('click', (event) => {
   const button = event.target.closest('[data-with]')
@@ -492,7 +593,12 @@ function frame() {
 
 let raf = 0
 raf = requestAnimationFrame(frame)
-window.addEventListener('resize', () => globe.update(viewSize()))
+namesEl.addEventListener('scroll', syncNameList, true)
+window.addEventListener('resize', () => {
+  globe.update(viewSize())
+  syncNameList()
+  if (app.querySelector('.person-toggle').getAttribute('aria-expanded') === 'true') placePersonMenu()
+})
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {

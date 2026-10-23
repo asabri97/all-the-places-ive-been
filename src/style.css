@@ -48,11 +48,11 @@ body {
 .page {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1fr min(560px, 62vw) minmax(220px, 1fr);
+  grid-template-columns: minmax(0, 1fr) min(560px, 62vw) max-content;
   align-items: center;
   justify-items: center;
   column-gap: 1.5rem;
-  padding: 6vh 2vw 3rem;
+  padding: 6vh 0.65rem 3rem 2vw;
 }
 
 .stage {
@@ -66,32 +66,62 @@ body {
   justify-self: start;
   align-self: center;
   z-index: 5;
-  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(var(--globe) * 0.7);
+  min-height: 0;
+  padding-right: 0.04em;
+  --globe: 560px;
+  --name-size: clamp(40px, 5vw, 84px);
+  transform: translateY(calc(var(--globe) * 0.05));
 }
 
 .switch,
 .card,
 .caption,
 .legend {
-  grid-column: 1 / -1;
+  grid-column: 2;
 }
 
 .name {
   margin: 0;
+  padding-right: 0.06em;
   font-family: 'Geist Display', 'Arial Black', Impact, sans-serif;
   font-weight: 900;
-  font-size: clamp(42px, 5.4vw, 96px);
+  font-size: var(--name-size, clamp(40px, 5vw, 84px));
   line-height: 0.78;
   letter-spacing: -0.06em;
   text-transform: uppercase;
   color: #111;
 }
 
+.name-main {
+  flex: none;
+}
+
+.name-list {
+  min-height: 0;
+  padding-bottom: calc(var(--name-size) * 0.28);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.name-list::-webkit-scrollbar {
+  display: none;
+}
+
+.name-list.is-more {
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--name-size) * 0.7), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - var(--name-size) * 0.7), transparent 100%);
+}
+
 .name-with {
   display: block;
   margin-left: 0.72em;
   border: 0;
-  padding: 0;
+  padding: 0 0.06em 0 0;
   background: transparent;
   color: #d4d4d4;
   cursor: pointer;
@@ -135,7 +165,15 @@ body {
 
   .names {
     justify-self: stretch;
+    max-width: 100%;
+    max-height: none;
     margin-top: 1.5rem;
+    transform: none;
+  }
+
+  .name-list {
+    overflow: visible;
+    mask-image: none;
   }
 
   .name {
@@ -190,23 +228,32 @@ body {
 .switch {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
   gap: 0.35rem 1.5rem;
   margin-top: 1.15rem;
 }
 
-.switch-group {
+.switch-group,
+.person-menu {
   display: flex;
+  align-items: center;
+}
+
+.switch-group {
   gap: 1rem;
 }
 
 .switch-btn {
+  display: inline-flex;
+  align-items: center;
   border: 0;
   background: transparent;
   color: var(--dim);
   cursor: pointer;
-  padding: 0.15rem 0;
+  padding: 0;
   font-size: 12px;
+  line-height: 1;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -218,6 +265,89 @@ body {
 .switch-btn:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 3px;
+}
+
+.person-menu {
+  position: relative;
+}
+
+.person-toggle {
+  gap: 0.4rem;
+  color: var(--ink);
+}
+
+.person-swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  flex: none;
+}
+
+.person-chevron {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+}
+
+.person-toggle[aria-expanded='true'] .person-chevron {
+  transform: rotate(180deg);
+}
+
+.person-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.55rem);
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 11rem;
+  max-height: min(340px, 46vh);
+  margin: 0;
+  padding: 0.45rem 0.35rem;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #ececec;
+  box-shadow: 0 16px 40px rgba(17, 17, 17, 0.08);
+}
+
+.person-list.is-up {
+  top: auto;
+  bottom: calc(100% + 0.55rem);
+}
+
+.person-list[hidden] {
+  display: none;
+}
+
+.person-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  border: 0;
+  padding: 0.02rem 0.55rem;
+  background: transparent;
+  color: #d4d4d4;
+  cursor: pointer;
+  font-family: 'Geist Display', 'Arial Black', Impact, sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.person-option[aria-selected='true'],
+.person-option:hover,
+.person-option:focus-visible {
+  color: #111;
+  outline: none;
 }
 
 .marker-label {
@@ -414,7 +544,10 @@ body {
 
 .legend {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 1rem;
+  max-width: min(560px, 92vw);
   margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;

@@ -67,7 +67,10 @@ export function mergePlaces(people) {
       }
     }
   }
-  return [...byId.values()].map((place) => ({ ...place, shared: place.people.length > 1 }))
+  return [...byId.values()].map((place) => ({
+    ...place,
+    shared: place.people.filter((person) => person.status === 'been' || person.status === 'lived').length > 1,
+  }))
 }
 
 export function parseShared(text) {
@@ -82,7 +85,12 @@ export function parseShared(text) {
       .split(/[^a-z0-9_-]+/)
       .filter(Boolean)
     if (!name || people.length < 2) continue
-    trips.push({ id: slug(name), people: [...new Set(people)] })
+    const photos = col.photos == null ? null : cell(row, col.photos)
+    trips.push({
+      id: slug(name),
+      people: [...new Set(people)],
+      photos: photos === '-' ? [] : null,
+    })
   }
   return trips
 }
@@ -92,13 +100,21 @@ export function markTogether(places, trips, selectedIds) {
   const visible = new Map()
   for (const trip of trips) {
     const present = trip.people.filter((id) => selected.has(id))
-    if (present.length >= 2) visible.set(trip.id, trip.people)
+    if (present.length < 2) continue
+    const current = visible.get(trip.id) || { people: [], blank: true }
+    current.people = [...new Set([...current.people, ...trip.people])]
+    if (!(Array.isArray(trip.photos) && trip.photos.length === 0)) current.blank = false
+    visible.set(trip.id, current)
   }
-  return places.map((place) => (visible.has(place.id) ? { ...place, together: visible.get(place.id) } : place))
+  return places.map((place) => {
+    const trip = visible.get(place.id)
+    if (!trip) return place
+    return { ...place, together: trip.people, ...(trip.blank ? { togetherPhotos: [] } : {}) }
+  })
 }
 
 export function togetherPhotoList(place, photos, showTogether) {
-  if (!showTogether) return []
+  if (!showTogether || (Array.isArray(place.togetherPhotos) && place.togetherPhotos.length === 0)) return []
   return photos.get(place.id) || []
 }
 
